@@ -11,7 +11,7 @@
 - [x] Migrated and enhanced core functionality from original script
 - [x] Implemented CLI with Fire integration
 - [x] Created comprehensive test suite with 95% coverage
-- [x] Set up GitHub Actions workflows for CI/CD
+- [x] Designed GitHub Actions workflows (manual setup required due to permissions)
 - [x] Applied proper code formatting and linting
 - [x] Created CHANGELOG.md and documentation
 
