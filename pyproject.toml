@@ -3,13 +3,13 @@ requires = ["hatchling", "hatch-vcs"]
 build-backend = "hatchling.build"
 
 [project]
-name = "topl"
+name = "toml-topl"
 dynamic = ["version"]
 description = "TOML extended with placeholders - two-phase placeholder resolution"
 readme = "README.md"
 license = {text = "MIT"}
 authors = [
-    {name = "Terragon Labs", email = "dev@terragonlabs.com"}
+    {name = "Adam Twardoch", email = "adam+github@twardoch.com"}
 ]
 classifiers = [
     "Development Status :: 4 - Beta",
