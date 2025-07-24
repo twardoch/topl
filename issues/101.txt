@@ -1,0 +1,6 @@
+Now read @TODO.md and the @llms.txt codebase snapshot. Also read @CHANGELOG.md. Then from @TODO.md completely remove all items that actually are completed. 
+
+Then read @issues/102.txt and and re-prioritize the remaining items in @TODO.md including the items resulting from @issues/102.txt.
+
+Then /work on completing the items. 
+

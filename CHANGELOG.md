@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed (July 24, 2025)
+- Updated TODO.md to reflect completed Phase 1 tasks
+- Reorganized remaining tasks into Phase 2 and Phase 3
+- Added new tasks based on code review feedback from PR #1
+
 ### Added
 - Initial implementation of TOPL (TOML Extended with Placeholders)
 - Two-phase placeholder resolution (internal → external)
@@ -19,6 +24,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Modern Python packaging with uv and hatch
 - GitHub Actions CI/CD workflows
 - Documentation and examples
+
+### Improved (July 24, 2025) - Post-PR #1 Enhancements
+- CLI file loading now uses `tomllib.load()` for better memory efficiency
+- Placeholder resolution now supports lists and tuples
+- Input data protection with deep copy to prevent mutations
+- Enhanced error handling with specific exception types in CLI
+- Extended test coverage for edge cases (multiple unresolved placeholders, lists, empty paths)
+- Optimized unresolved placeholder collection using list comprehension
+- Added GitHub Actions workflows for CI/CD, releases, and dependency management
 
 ### Core Features
 - `resolve_placeholders()` function for processing TOML data

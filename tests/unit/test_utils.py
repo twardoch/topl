@@ -39,6 +39,14 @@ class TestGetByPath:
         data = Box({"a": {"b": "value"}})
         assert get_by_path(data, "a.b.c") is None
 
+    def test_empty_path(self):
+        """Test handling of empty or whitespace-only paths."""
+        data = Box({"a": "value"})
+        assert get_by_path(data, "") is None
+        assert get_by_path(data, "   ") is None
+        assert get_by_path(data, "\t") is None
+        assert get_by_path(data, "\n") is None
+
 
 class TestResolveInternalOnce:
     """Tests for the resolve_internal_once function."""
@@ -138,3 +146,29 @@ class TestIterBoxStrings:
         string_values = [parent[key] for key, parent in results]
         assert "text" in string_values
         assert "more text" in string_values
+
+    def test_strings_in_lists(self):
+        """Test iteration over strings in lists and tuples."""
+        data = Box(
+            {
+                "items": ["string1", "string2", 123],
+                "nested": {
+                    "list": ["nested1", {"inner": "nested2"}],
+                    "tuple_data": ("tuple1", "tuple2")
+                }
+            }
+        )
+        results = list(iter_box_strings(data))
+
+        # Should find all string values including those in lists/tuples
+        string_values = []
+        for key, parent in results:
+            string_values.append(parent[key])
+
+        assert "string1" in string_values
+        assert "string2" in string_values
+        assert "nested1" in string_values
+        assert "nested2" in string_values
+        assert "tuple1" in string_values
+        assert "tuple2" in string_values
+        assert len(results) == 6

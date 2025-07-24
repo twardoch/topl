@@ -6,10 +6,11 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
+from types import MappingProxyType
 from typing import Any
 
 # Type aliases for better readability
 TOMLData = dict[str, Any]
 ConfigMapping = Mapping[str, Any]
-PlaceholderParams = dict[str, str]
+PlaceholderParams = dict[str, str] | MappingProxyType[str, str]
 NestedValue = str | dict[str, Any] | Any

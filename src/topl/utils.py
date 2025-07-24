@@ -31,7 +31,14 @@ def get_by_path(box: Box, dotted_path: str) -> Any:
         'value'
         >>> get_by_path(data, "a.missing")
         None
+        >>> get_by_path(data, "")
+        None
+        >>> get_by_path(data, "   ")
+        None
     """
+    if not dotted_path or not dotted_path.strip():
+        return None
+
     current = box
     for part in dotted_path.split("."):
         if not isinstance(current, Mapping) or part not in current:
@@ -100,24 +107,36 @@ def resolve_external(s: str, params: PlaceholderParams) -> str:
     return tmp.format_map(SafeDict(params))
 
 
-def iter_box_strings(box: Box) -> Generator[tuple[str, Box], None, None]:
-    """Yield (key, parent_box) pairs for every string leaf in box.
+def iter_box_strings(box: Box) -> Generator[tuple[str | int, Any], None, None]:
+    """Yield (key, parent_container) pairs for every string leaf in box.
 
     We return both key and the parent so we can assign new values in-place.
+    Now handles lists and other sequence types in addition to mappings.
 
     Args:
         box: Box instance to iterate through
 
     Yields:
-        Tuple of (key, parent_box) for each string value found
+        Tuple of (key, parent_container) for each string value found.
+        Key can be a string (for dicts) or int (for lists).
 
     Examples:
-        >>> data = Box({"a": "text", "b": {"c": "more text"}})
+        >>> data = Box({"a": "text", "b": {"c": "more text"}, "d": ["item1", "item2"]})
         >>> list(iter_box_strings(data))
-        [('a', Box(...)), ('c', Box(...))]
+        [('a', Box(...)), ('c', Box(...)), (0, [...]), (1, [...])]
     """
-    for key, val in box.items():
-        if isinstance(val, str):
-            yield key, box
-        elif isinstance(val, Mapping):
-            yield from iter_box_strings(val)  # type: ignore[arg-type]
+    def _iter_container(container: Any) -> Generator[tuple[str | int, Any], None, None]:
+        if isinstance(container, Mapping):
+            for key, val in container.items():
+                if isinstance(val, str):
+                    yield key, container
+                elif isinstance(val, Mapping | list | tuple):
+                    yield from _iter_container(val)
+        elif isinstance(container, list | tuple):
+            for idx, val in enumerate(container):
+                if isinstance(val, str):
+                    yield idx, container
+                elif isinstance(val, Mapping | list | tuple):
+                    yield from _iter_container(val)
+
+    yield from _iter_container(box)

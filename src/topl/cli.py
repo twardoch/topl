@@ -15,8 +15,12 @@ from rich.console import Console
 from rich.logging import RichHandler
 
 from .core import resolve_placeholders
+from .exceptions import (
+    CircularReferenceError,
+    InvalidTOMLError,
+    PlaceholderResolutionError,
+)
 from .exceptions import FileNotFoundError as TOPLFileNotFoundError
-from .exceptions import InvalidTOMLError
 
 
 def configure_logging(verbose: bool = False) -> None:
@@ -47,12 +51,10 @@ def load_toml_file(path: Path) -> dict[str, Any]:
         InvalidTOMLError: If TOML parsing fails
     """
     try:
-        data = path.read_bytes()
+        with path.open("rb") as f:
+            return tomllib.load(f)
     except FileNotFoundError as e:
         raise TOPLFileNotFoundError(f"TOML file {path} not found") from e
-
-    try:
-        return tomllib.loads(data.decode())
     except tomllib.TOMLDecodeError as e:
         raise InvalidTOMLError(f"Invalid TOML in {path}: {e}") from e
 
@@ -95,8 +97,17 @@ def main_cli(path: str, verbose: bool = False, **params: str) -> None:
             logger.warning(f"Unresolved placeholders: {config.unresolved_placeholders}")
             sys.exit(1)
 
-    except (TOPLFileNotFoundError, InvalidTOMLError) as e:
-        logger.error(str(e))
+    except TOPLFileNotFoundError as e:
+        logger.error(f"File error: {e}")
+        sys.exit(1)
+    except InvalidTOMLError as e:
+        logger.error(f"TOML parsing error: {e}")
+        sys.exit(1)
+    except CircularReferenceError as e:
+        logger.error(f"Circular reference detected: {e}")
+        sys.exit(1)
+    except PlaceholderResolutionError as e:
+        logger.error(f"Placeholder resolution failed: {e}")
         sys.exit(1)
     except Exception as e:
         logger.error(f"Unexpected error: {e}")

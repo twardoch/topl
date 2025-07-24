@@ -1,0 +1,447 @@
+
+sourcery-ai[bot] <notifications@github.com> Unsubscribe
+Wed, Jul 23, 2:08 PM (22 hours ago)
+to twardoch/topl, Adam, Author
+
+
+sourcery-ai[bot]
+ left a comment 
+(twardoch/topl#1)
+🧙 Sourcery is reviewing your pull request!
+
+Tips and commands
+Interacting with Sourcery
+Trigger a new review: Comment @sourcery-ai review on the pull request.
+Continue discussions: Reply directly to Sourcery's review comments.
+Generate a GitHub issue from a review comment: Ask Sourcery to create an
+issue from a review comment by replying to it. You can also reply to a
+review comment with @sourcery-ai issue to create an issue from it.
+Generate a pull request title: Write @sourcery-ai anywhere in the pull
+request title to generate a title at any time. You can also comment
+@sourcery-ai title on the pull request to (re-)generate the title at any time.
+Generate a pull request summary: Write @sourcery-ai summary anywhere in
+the pull request body to generate a PR summary at any time exactly where you
+want it. You can also comment @sourcery-ai summary on the pull request to
+(re-)generate the summary at any time.
+Generate reviewer's guide: Comment @sourcery-ai guide on the pull
+request to (re-)generate the reviewer's guide at any time.
+Resolve all Sourcery comments: Comment @sourcery-ai resolve on the
+pull request to resolve all Sourcery comments. Useful if you've already
+addressed all the comments and don't want to see them anymore.
+Dismiss all Sourcery reviews: Comment @sourcery-ai dismiss on the pull
+request to dismiss all existing Sourcery reviews. Especially useful if you
+want to start fresh with a new review - don't forget to comment
+@sourcery-ai review to trigger a new review!
+Customizing Your Experience
+Access your dashboard to:
+
+Enable or disable review features such as the Sourcery-generated pull request
+summary, the reviewer's guide, and others.
+Change the review language.
+Add, remove or edit custom review instructions.
+Adjust other review settings.
+Getting Help
+Contact our support team for questions or feedback.
+Visit our documentation for detailed guides and information.
+Keep in touch with the Sourcery team by following us on X/Twitter, LinkedIn or GitHub.
+—
+Reply to this email directly, view it on GitHub, or unsubscribe.
+You are receiving this because you authored the thread.
+
+
+qodo-merge-pro[bot] <notifications@github.com>
+Wed, Jul 23, 4:44 PM (20 hours ago)
+to State, twardoch/topl, Adam
+
+
+qodo-merge-pro[bot]
+ left a comment 
+(twardoch/topl#1)
+PR Reviewer Guide 🔍
+Here are some key observations to aid the review process:
+
+⏱️ Estimated effort to review: 4 🔵🔵🔵🔵⚪
+🧪 PR contains tests
+🔒 No security concerns identified
+⚡ Recommended focus areas for review
+
+Circular Reference
+The circular reference detection relies on MAX_INTERNAL_PASSES constant but may not catch all circular reference patterns. The current implementation could miss complex circular dependencies that don't trigger the maximum pass limit.
+
+for i in range(MAX_INTERNAL_PASSES):
+    changed = False
+    for key, parent in iter_box_strings(cfg):
+        original = parent[key]
+        resolved = resolve_internal_once(original, cfg)
+        if original != resolved:
+            parent[key] = resolved
+            changed = True
+            logger.debug(f"Resolved internal: {original} -> {resolved}")
+
+    if not changed:
+        logger.debug(f"Internal resolution stabilized after {i + 1} passes")
+        break
+else:
+    # This indicates circular references or very deep nesting
+    raise CircularReferenceError(
+        f"Reached maximum internal passes ({MAX_INTERNAL_PASSES}). "
+        "Circular placeholder references detected or resolution is too complex."
+    )
+Error Handling
+The CLI catches all exceptions with a broad except clause which could mask unexpected errors. The verbose flag only shows full traceback for unexpected errors, potentially hiding important debugging information for known error types.
+
+except Exception as e:
+    logger.error(f"Unexpected error: {e}")
+    if verbose:
+        logger.exception("Full traceback:")
+    sys.exit(1)
+Type Safety
+The get_by_path function returns None for missing paths but doesn't validate the input path format. Malformed dotted paths could cause unexpected behavior or errors during path traversal.
+
+def get_by_path(box: Box, dotted_path: str) -> Any:
+    """Return value at dotted_path or None if the path is invalid.
+
+    Args:
+        box: Box instance to search in
+        dotted_path: Dot-separated path like "foo.bar.baz"
+
+    Returns:
+        Value at the specified path, or None if path doesn't exist
+
+    Examples:
+        >>> data = Box({"a": {"b": {"c": "value"}}})
+        >>> get_by_path(data, "a.b.c")
+        'value'
+        >>> get_by_path(data, "a.missing")
+        None
+    """
+    current = box
+    for part in dotted_path.split("."):
+        if not isinstance(current, Mapping) or part not in current:
+            return None
+        current = current[part]
+    return current
+—
+Reply to this email directly, view it on GitHub, or unsubscribe.
+You are receiving this because you modified the open/close state.
+
+
+sourcery-ai[bot] <notifications@github.com>
+Wed, Jul 23, 4:44 PM (20 hours ago)
+to Mention, twardoch/topl, Adam
+
+@sourcery-ai[bot] commented on this pull request.
+
+Hey @twardoch - I've reviewed your changes - here's some feedback:
+
+This PR combines core logic, CLI, packaging, docs, and CI in a single massive change—consider splitting it into smaller, focused PRs (e.g., core resolution, CLI, then packaging/CI) to simplify review and isolate concerns.
+The iter_box_strings helper only descends through Mapping types, so placeholders inside lists or tuples won’t be resolved—consider extending it to traverse those iterables as well.
+In main_cli, add an explicit catch for PlaceholderResolutionError (or other resolution-specific errors) to provide clearer error messages and exit codes rather than relying on the generic exception handler.
+Prompt for AI Agents
+Please address the comments from this code review:
+## Overall Comments
+- This PR combines core logic, CLI, packaging, docs, and CI in a single massive change—consider splitting it into smaller, focused PRs (e.g., core resolution, CLI, then packaging/CI) to simplify review and isolate concerns.
+- The iter_box_strings helper only descends through Mapping types, so placeholders inside lists or tuples won’t be resolved—consider extending it to traverse those iterables as well.
+- In main_cli, add an explicit catch for PlaceholderResolutionError (or other resolution-specific errors) to provide clearer error messages and exit codes rather than relying on the generic exception handler.
+
+## Individual Comments
+
+### Comment 1
+<location> `src/topl/cli.py:36` </location>
+<code_context>
++    )
++
++
++def load_toml_file(path: Path) -> dict[str, Any]:
++    """Load and parse a TOML file.
++
+</code_context>
+
+<issue_to_address>
+The function reads the entire file into memory before decoding.
+
+Using tomllib.load(path.open('rb')) can improve memory efficiency and handle file encoding more robustly.
+
+Suggested implementation:
+
+```python
+def load_toml_file(path: Path) -> dict[str, Any]:
+    """Load and parse a TOML file.
+
+
+```
+
+```python
+def load_toml_file(path: Path) -> dict[str, Any]:
+    """Load and parse a TOML file.
+
+    with path.open("rb") as f:
+        return tomllib.load(f)
+
+```
+</issue_to_address>
+
+### Comment 2
+<location> `src/topl/utils.py:103` </location>
+<code_context>
++    return tmp.format_map(SafeDict(params))
++
++
++def iter_box_strings(box: Box) -> Generator[tuple[str, Box], None, None]:
++    """Yield (key, parent_box) pairs for every string leaf in box.
++
+</code_context>
+
+<issue_to_address>
+The function does not handle lists or other sequence types within the Box.
+
+Currently, iter_box_strings skips string values inside lists or nested sequences, so placeholders in those structures are not processed. Please update the function to handle these cases recursively.
+</issue_to_address>
+
+### Comment 3
+<location> `tests/unit/test_core.py:61` </location>
+<code_context>
++        with pytest.raises(CircularReferenceError):
++            resolve_placeholders(circular_data)
++
++    def test_unresolved_placeholders(self):
++        """Test handling of unresolved placeholders."""
++        data = {"message": "Hello {{missing}}!"}
++        config = resolve_placeholders(data)
++
++        assert config.has_unresolved
++        assert "{{missing}}" in config.unresolved_placeholders
++        assert config.message == "Hello {{missing}}!"
++
++    def test_no_placeholders(self):
+</code_context>
+
+<issue_to_address>
+Add a test for multiple unresolved placeholders in a single value.
+
+Consider adding a test with multiple unresolved placeholders in one string to verify all are detected and reported correctly.
+</issue_to_address>
+
+<suggested_fix>
+<<<<<<< SEARCH
+    def test_no_placeholders(self):
+        """Test data without any placeholders."""
+        data = {"simple": "value", "number": 42}
+        config = resolve_placeholders(data)
+
+        assert not config.has_unresolved
+        assert config.simple == "value"
+        assert config.number == 42
+=======
+    def test_multiple_unresolved_placeholders(self):
+        """Test handling of multiple unresolved placeholders in a single value."""
+        data = {"message": "Hello {{missing1}} and {{missing2}} and {{missing3}}!"}
+        config = resolve_placeholders(data)
+
+        assert config.has_unresolved
+        assert "{{missing1}}" in config.unresolved_placeholders
+        assert "{{missing2}}" in config.unresolved_placeholders
+        assert "{{missing3}}" in config.unresolved_placeholders
+        assert config.message == "Hello {{missing1}} and {{missing2}} and {{missing3}}!"
+
+    def test_no_placeholders(self):
+        """Test data without any placeholders."""
+        data = {"simple": "value", "number": 42}
+        config = resolve_placeholders(data)
+
+        assert not config.has_unresolved
+        assert config.simple == "value"
+        assert config.number == 42
+>>>>>>> REPLACE
+
+</suggested_fix>
+Sourcery is free for open source - if you like our reviews please consider sharing them ✨
+X
+Mastodon
+LinkedIn
+Facebook
+Help me be more useful! Please click 👍 or 👎 on each comment and I'll use the feedback to improve your reviews.
+In src/topl/cli.py:
+
+> +
++def configure_logging(verbose: bool = False) -> None:
++    """Configure logging with Rich formatting.
++
++    Args:
++        verbose: Enable debug-level logging if True
++    """
++    level = logging.DEBUG if verbose else logging.INFO
++    logging.basicConfig(
++        level=level,
++        format="%(message)s",
++        handlers=[RichHandler(rich_tracebacks=True, console=Console(stderr=True))],
++    )
++
++
++def load_toml_file(path: Path) -> dict[str, Any]:
+suggestion (performance): The function reads the entire file into memory before decoding.
+
+Using tomllib.load(path.open('rb')) can improve memory efficiency and handle file encoding more robustly.
+
+Suggested implementation:
+
+def load_toml_file(path: Path) -> dict[str, Any]:
+    """Load and parse a TOML file.
+def load_toml_file(path: Path) -> dict[str, Any]:
+    """Load and parse a TOML file.
+
+    with path.open("rb") as f:
+        return tomllib.load(f)
+In src/topl/utils.py:
+
+> +
++    class SafeDict(dict):
++        """Dict that leaves unknown placeholders unchanged."""
++
++        def __missing__(self, key: str) -> str:
++            return f"{{{{{key}}}}}"
++
++    if not params:
++        return s
++
++    # Convert {{name}} → {name}
++    tmp = PLACEHOLDER_PATTERN.sub(lambda m: "{" + m.group(1).strip() + "}", s)
++    return tmp.format_map(SafeDict(params))
++
++
++def iter_box_strings(box: Box) -> Generator[tuple[str, Box], None, None]:
+issue: The function does not handle lists or other sequence types within the Box.
+
+Currently, iter_box_strings skips string values inside lists or nested sequences, so placeholders in those structures are not processed. Please update the function to handle these cases recursively.
+
+In tests/unit/test_core.py:
+
+> +    def test_no_placeholders(self):
++        """Test data without any placeholders."""
++        data = {"simple": "value", "number": 42}
++        config = resolve_placeholders(data)
++
++        assert not config.has_unresolved
++        assert config.simple == "value"
++        assert config.number == 42
+suggestion (testing): Add a test for multiple unresolved placeholders in a single value.
+
+Consider adding a test with multiple unresolved placeholders in one string to verify all are detected and reported correctly.
+
+⬇️ Suggested change
+-    def test_no_placeholders(self):
+-        """Test data without any placeholders."""
+-        data = {"simple": "value", "number": 42}
+-        config = resolve_placeholders(data)
+-
+-        assert not config.has_unresolved
+-        assert config.simple == "value"
+-        assert config.number == 42
++    def test_multiple_unresolved_placeholders(self):
++        """Test handling of multiple unresolved placeholders in a single value."""
++        data = {"message": "Hello {{missing1}} and {{missing2}} and {{missing3}}!"}
++        config = resolve_placeholders(data)
++
++        assert config.has_unresolved
++        assert "{{missing1}}" in config.unresolved_placeholders
++        assert "{{missing2}}" in config.unresolved_placeholders
++        assert "{{missing3}}" in config.unresolved_placeholders
++        assert config.message == "Hello {{missing1}} and {{missing2}} and {{missing3}}!"
++
++    def test_no_placeholders(self):
++        """Test data without any placeholders."""
++        data = {"simple": "value", "number": 42}
++        config = resolve_placeholders(data)
++
++        assert not config.has_unresolved
++        assert config.simple == "value"
++        assert config.number == 42
+In src/topl/core.py:
+
+> +        for match in PLACEHOLDER_PATTERN.finditer(parent[key]):
++            unresolved_placeholders.append(match.group(0))
++
+suggestion (code-quality): Replace a for append loop with list extend (for-append-to-extend)
+
+⬇️ Suggested change
+-        for match in PLACEHOLDER_PATTERN.finditer(parent[key]):
+-            unresolved_placeholders.append(match.group(0))
+-
++        unresolved_placeholders.extend(
++            match.group(0)
++            for match in PLACEHOLDER_PATTERN.finditer(parent[key])
++        )
+—
+Reply to this email directly, view it on GitHub, or unsubscribe.
+You are receiving this because you were mentioned.
+
+
+qodo-merge-pro[bot] <notifications@github.com>
+Wed, Jul 23, 4:45 PM (20 hours ago)
+to twardoch/topl, Adam, Mention
+
+
+qodo-merge-pro[bot]
+ left a comment 
+(twardoch/topl#1)
+PR Code Suggestions ✨
+Explore these optional code suggestions:
+
+Category	Suggestion                                                                                                                                   	Impact
+General	Prevent input data mutations
+The Box initialization should use deep copying to prevent mutations of the
+original data structure. This ensures the input data remains unchanged during
+placeholder resolution.
+
+src/topl/core.py [75-108]
+
+ def resolve_placeholders(data: ConfigMapping, **params: str) -> TOPLConfig:
+     """Resolve placeholders inside data and return a TOPLConfig instance.
+     ...
+     """
+-    # Create Box with safe attribute access
+-    cfg = Box(data, default_box=True, default_box_attr=None)
++    # Create Box with safe attribute access and deep copy to prevent mutations
++    import copy
++    cfg = Box(copy.deepcopy(data), default_box=True, default_box_attr=None)
+[To ensure code accuracy, apply this suggestion manually]
+
+Suggestion importance[1-10]: 7
+__
+
+Why: The suggestion correctly identifies that the function mutates its input data, and proposing copy.deepcopy is the right solution to prevent this side effect, improving the function's robustness and adhering to good API design principles.
+
+Medium
+Handle empty path inputs
+The function should handle empty or whitespace-only paths gracefully. Currently,
+an empty string would result in splitting to [''] which could cause unexpected
+behavior.
+
+src/topl/utils.py [18-40]
+
+ def get_by_path(box: Box, dotted_path: str) -> Any:
+     """Return value at dotted_path or None if the path is invalid.
+     ...
+     """
++    if not dotted_path or not dotted_path.strip():
++        return None
++        
+     current = box
+     for part in dotted_path.split("."):
+         if not isinstance(current, Mapping) or part not in current:
+             return None
+         current = current[part]
+     return current
+[To ensure code accuracy, apply this suggestion manually]
+
+Suggestion importance[1-10]: 5
+__
+
+Why: The suggestion correctly points out that an empty dotted_path is not handled and adds a necessary check, which improves the robustness of the get_by_path utility function.
+
+Low
+ More
+—
+Reply to this email directly, view it on GitHub, or unsubscribe.
+You are receiving this because you were mentioned.
+

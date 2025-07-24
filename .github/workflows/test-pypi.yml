@@ -1,0 +1,70 @@
+name: Test PyPI
+
+on:
+  workflow_dispatch:
+    inputs:
+      version_suffix:
+        description: 'Version suffix (e.g., rc1, dev1)'
+        required: false
+        default: 'dev'
+
+permissions:
+  contents: read
+  id-token: write  # For PyPI trusted publishing
+
+jobs:
+  build-and-test:
+    name: Build and Test Release
+    runs-on: ubuntu-latest
+    environment:
+      name: test-pypi
+      url: https://test.pypi.org/project/topl/
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # Full history for version detection
+
+    - name: Install uv
+      uses: astral-sh/setup-uv@v4
+      with:
+        enable-cache: true
+
+    - name: Set up Python
+      run: uv python install 3.12
+
+    - name: Create dev version
+      if: inputs.version_suffix != ''
+      run: |
+        # Get current version from git tags
+        VERSION=$(git describe --tags --abbrev=0 | sed 's/^v//')
+        # Add suffix
+        DEV_VERSION="${VERSION}.${inputs.version_suffix}$(date +%Y%m%d%H%M%S)"
+        echo "DEV_VERSION=$DEV_VERSION" >> $GITHUB_ENV
+        # Create temporary tag for hatch-vcs
+        git tag "v$DEV_VERSION"
+
+    - name: Build package
+      run: uv build
+
+    - name: Check build
+      run: |
+        ls -la dist/
+        uv run twine check dist/*
+
+    - name: Publish to Test PyPI
+      uses: pypa/gh-action-pypi-publish@release/v1
+      with:
+        repository-url: https://test.pypi.org/legacy/
+
+    - name: Test installation from Test PyPI
+      run: |
+        # Wait for package to be available
+        sleep 30
+        # Create a new virtual environment
+        uv venv test-env
+        source test-env/bin/activate || source test-env/Scripts/activate
+        # Install from Test PyPI
+        uv pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/ topl
+        # Test the installation
+        topl --help
+        python -m topl --help

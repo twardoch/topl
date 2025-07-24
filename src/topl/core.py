@@ -104,8 +104,9 @@ def resolve_placeholders(data: ConfigMapping, **params: str) -> TOPLConfig:
         >>> config_with_external.message
         'Hello Alice!'
     """
-    # Create Box with safe attribute access
-    cfg = Box(data, default_box=True, default_box_attr=None)
+    # Create Box with safe attribute access and deep copy to prevent mutations
+    import copy
+    cfg = Box(copy.deepcopy(data), default_box=True, default_box_attr=None)
 
     # Phase 1: Internal substitutions (multiple passes)
     logger.debug("Starting internal placeholder resolution")
@@ -144,8 +145,10 @@ def resolve_placeholders(data: ConfigMapping, **params: str) -> TOPLConfig:
     # Phase 3: Collect unresolved placeholders
     unresolved_placeholders: list[str] = []
     for key, parent in iter_box_strings(cfg):
-        for match in PLACEHOLDER_PATTERN.finditer(parent[key]):
-            unresolved_placeholders.append(match.group(0))
+        unresolved_placeholders.extend(
+            match.group(0)
+            for match in PLACEHOLDER_PATTERN.finditer(parent[key])
+        )
 
     if unresolved_placeholders:
         unique_unresolved = sorted(set(unresolved_placeholders))
