@@ -1,0 +1,85 @@
+name: Build and Deploy Documentation
+
+on:
+  push:
+    branches: [ main, master ]
+    paths:
+      - 'src_docs/**'
+      - 'src/**'  # Rebuild docs when source code changes (for API docs)
+      - '.github/workflows/docs.yml'
+  pull_request:
+    branches: [ main, master ]
+    paths:
+      - 'src_docs/**'
+      - 'src/**'
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  build-docs:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+
+    - name: Install uv
+      uses: astral-sh/setup-uv@v2
+      with:
+        version: "latest"
+
+    - name: Install dependencies
+      run: |
+        uv sync --extra docs
+
+    - name: Build documentation
+      run: |
+        cd src_docs
+        uv run mkdocs build --clean --strict
+        
+    - name: Copy built docs to docs directory
+      run: |
+        # Remove existing docs content but keep .nojekyll
+        find docs -type f ! -name '.nojekyll' -delete
+        find docs -type d ! -name 'docs' -exec rm -rf {} +
+        
+        # Copy built documentation
+        cp -r src_docs/site/* docs/
+        
+        # Ensure .nojekyll exists for GitHub Pages
+        touch docs/.nojekyll
+
+    - name: Setup Pages
+      if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+      uses: actions/configure-pages@v3
+
+    - name: Upload artifact
+      if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+      uses: actions/upload-pages-artifact@v2
+      with:
+        path: './docs'
+
+  deploy-docs:
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build-docs
+    
+    steps:
+    - name: Deploy to GitHub Pages
+      id: deployment
+      uses: actions/deploy-pages@v2
