@@ -193,7 +193,7 @@ Example guard in `resolve_external`:
 
 ```python
 for k in params:
-    if not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_\.]*", k):
+    if not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", k):
         raise InvalidTOMLError(f"Invalid external key: {k}")
 ```
 
