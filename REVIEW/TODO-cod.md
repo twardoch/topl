@@ -70,7 +70,7 @@ def maybe_enable_loguru(verbose: bool) -> None:
         return
     class InterceptHandler(logging.Handler):
         def emit(self, record: logging.LogRecord) -> None:
-            level = _logger.level(record.levelname).name if record.levelname in _logger._levels else record.levelno
+            level = _logger.level(record.levelname).name if record.levelname in _logger._core.levels else record.levelno
             _logger.log(level, record.getMessage())
     logging.root.handlers = [InterceptHandler()]
     logging.root.setLevel(logging.DEBUG if verbose else logging.INFO)
