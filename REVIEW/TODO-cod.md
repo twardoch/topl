@@ -28,7 +28,7 @@ This is a concrete, example-backed plan to improve this repository without chang
 Example README snippet:
 
 ```md
-Quick start
+Quick Start
 
 ```toml
 # config.toml
